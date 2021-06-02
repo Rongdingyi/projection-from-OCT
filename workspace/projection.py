@@ -6,7 +6,7 @@ from scipy.stats.morestats import circmean
 import torch
 import torchvision
 import torch.nn.functional as F
-from loss import MaxPoolLoss
+from models.loss import MaxPoolLoss
 
 number = 59
 image = Image.open(os.path.join('/media/rong/file/OCT and OCTA/OCTA_6M_OCTA/10001/'+str(number+1)+'.bmp')).convert('RGB')

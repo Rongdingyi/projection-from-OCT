@@ -1,17 +1,17 @@
-from models import ResNet18, ResNet50
-from dataset10001 import load_data_bmp
-import numpy as np
 import os
+from models.models import ResNet18, ResNet50
+from dataset.octa_dataset import load_data_bmp
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from loss import MaxPoolLoss
+from models.loss import MaxPoolLoss
 from tqdm import trange
 from tqdm import tqdm
-import metrics
+from utils import metrics
 from collections import OrderedDict
 from torch.autograd import Variable
-
+from models.projection import pixel_from_image
 
 def main(end_epoch, input_root, output_root):
     n_channels = 3
@@ -26,7 +26,7 @@ def main(end_epoch, input_root, output_root):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = ResNet18(in_channels=n_channels).to(device)
     model = torch.nn.DataParallel(model)
-    criterion = MaxPoolLoss(1,400)
+    criterion = MaxPoolLoss(10,400)
     # criterion = nn.BCEWithLogitsLoss()
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
 
@@ -48,16 +48,20 @@ def train(model, optimizer, criterion, train_loader, device):
     train_loss = metrics.LossAverage()
     for batch_idx, (inputs, targets) in tqdm(enumerate(train_loader),total = len(train_loader)):
         optimizer.zero_grad()
-        outputs = model(inputs.to(device))
+        predict = model(inputs.to(device))
         targets = targets.to(device)
-        loss = criterion(inputs.to(device), outputs, targets, device)
-        print(outputs)
-        # loss = criterion(outputs, targets)
+        predict = predict.to(device)
+        max = pixel_from_image(inputs.to(device), predict, 10, 400)
+        # print(predict)
+        # print(predict.requires_grad)
+        loss = criterion(max, targets)
+        # loss = criterion(predict, targets)
+        # print(loss)
         loss.backward()
         optimizer.step()
-    #     # for name, parms in model.named_parameters():	
-	#     #     print('-->name:', name, '-->grad_requirs:',parms.requires_grad, \
-	# 	#  ' -->grad_value:',parms.grad)
+        for name, parms in model.named_parameters():	
+	        print('-->name:', name, '-->grad_requirs:',parms.requires_grad, \
+		 ' -->grad_value:',parms.grad)
         train_loss.update(loss.item(),inputs.size(0))
     print(train_loss.avg)
 
