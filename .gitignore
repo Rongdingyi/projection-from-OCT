@@ -1,0 +1,4 @@
+# User-defined
+tmp*
+.DS_Store
+.vscode
