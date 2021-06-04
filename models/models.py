@@ -79,7 +79,7 @@ class ResNet(nn.Module):
         self.layer5 = nn.Conv2d(512, 512, (40,1), stride=1, padding=0, bias=False)
         self.linear = nn.Sequential(
             nn.Linear(in_features = 512*1*25, out_features = 4096),
-            nn.Linear(in_features = 4096, out_features = 100),
+            nn.Linear(in_features = 4096, out_features = 50),
         )
 
     def _make_layer(self, block, planes, num_blocks, stride):
@@ -102,7 +102,7 @@ class ResNet(nn.Module):
         # out = out.view(x.size(0),-1)
         out = self.linear(out)
         out = F.sigmoid(out)
-        out = out.view(-1,1,2,50)
+        out = out.view(-1,1,2,25)
         return out
 
 def ResNet18(in_channels):

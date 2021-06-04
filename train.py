@@ -1,6 +1,6 @@
 import os
 from models.models import ResNet18, ResNet50
-from dataset.octa_dataset import load_data_bmp
+from dataset.dataset1 import load_data_bmp
 import numpy as np
 import torch
 import torch.nn as nn
@@ -22,7 +22,7 @@ def main(end_epoch, input_root, output_root):
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
-    train_loader, val_loader = load_data_bmp(batch_size=4, data_dir=input_root)
+    train_loader, val_loader = load_data_bmp(batch_size=1, data_dir=input_root)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = ResNet18(in_channels=n_channels).to(device)
     model = torch.nn.DataParallel(model)
@@ -34,13 +34,13 @@ def main(end_epoch, input_root, output_root):
         train(model, optimizer, criterion, train_loader, device)
         # val(model, val_loader, device, val_auc_list, dir_path, epoch)
 
-    auc_list = np.array(val_auc_list)
-    index = auc_list.argmax()
-    print('epoch %s is the best model' % (index))
+    # auc_list = np.array(val_auc_list)
+    # index = auc_list.argmax()
+    # print('epoch %s is the best model' % (index))
 
-    print('==> Testing model...')
-    restore_model_path = os.path.join(
-        dir_path, 'ckpt_%d_auc_%.5f.pth' % (index, auc_list[index]))
+    # print('==> Testing model...')
+    # restore_model_path = os.path.join(
+    #     dir_path, 'ckpt_%d_auc_%.5f.pth' % (index, auc_list[index]))
     # model.load_state_dict(torch.load(restore_model_path)['net'])
 
 def train(model, optimizer, criterion, train_loader, device):
@@ -51,17 +51,17 @@ def train(model, optimizer, criterion, train_loader, device):
         predict = model(inputs.to(device))
         targets = targets.to(device)
         predict = predict.to(device)
-        max = pixel_from_image(inputs.to(device), predict, 10, 400)
-        # print(predict)
+        # max = pixel_from_image(inputs.to(device), predict, 10, 400)
+        print(predict)
         # print(predict.requires_grad)
-        loss = criterion(max, targets)
+        loss = criterion(predict, targets)
         # loss = criterion(predict, targets)
-        # print(loss)
+        print(loss)
         loss.backward()
         optimizer.step()
-        for name, parms in model.named_parameters():	
-	        print('-->name:', name, '-->grad_requirs:',parms.requires_grad, \
-		 ' -->grad_value:',parms.grad)
+        # for name, parms in model.named_parameters():	
+	    #     print('-->name:', name, '-->grad_requirs:',parms.requires_grad, \
+		#  ' -->grad_value:',parms.grad)
         train_loss.update(loss.item(),inputs.size(0))
     print(train_loss.avg)
 
